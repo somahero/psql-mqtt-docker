@@ -1,0 +1,42 @@
+version: '3.6'
+services:
+  postgres:
+    image: postgres
+    restart: always
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+      - ./initdb.d:/docker-entrypoint-initdb.d:ro
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secretpgpassword}
+    ports:
+      - '5432:5432'
+  mqtt:
+    image: eclipse-mosquitto:1.6.15
+    ports:
+      - ${MQTT_PORT:-1883}:1883
+      - 9001:9001
+    volumes:
+      - ./conf:/mosquitto/conf
+      - ./data:/mosquitto/data
+      - ./log:/mosquitto/log
+  pgweb:
+    image: sosedoff/pgweb:latest
+    ports:
+      - ${STACK_PGWEB_PORT:-8081}:8081
+    restart: always
+    env_file: .env
+    environment:
+      DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD:-secretpgpassword}@postgres:5432/postgres?sslmode=disable"
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - "node.role == manager"
+          - "node.platform.os == linux"
+          - "node.platform.arch == x86_64"
+        preferences:
+          - spread: node.labels.zone
+        max_replicas_per_node: 1
+networks:
+  internal_network:

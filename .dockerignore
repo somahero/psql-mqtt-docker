@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+coverage
+docs
+examples
+mock-config
+*.sh
+.editorconfig
+.prettierignore
+docker-compose*
+Dockerfile*
+**/*.pem
